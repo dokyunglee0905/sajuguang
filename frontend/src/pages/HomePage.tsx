@@ -67,9 +67,9 @@ export default function HomePage() {
                 <span style={{ fontSize: 20, fontWeight: 800, color: elColor }}>{mainOhaeng.element}({mainOhaeng.nature})</span>
                 <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>· {ANIMAL_EMOJI[animal] ?? ''} {animal}</span>
               </div>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.72)', lineHeight: 1.65, margin: 0 }}>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.72)', lineHeight: 1.65, margin: 0, textAlign: 'left' }}>
                 {mainOhaeng.personality} 기질을 가졌어요.
-                {animal && ` ${animal}의 해에 태어나 ${getAnimalDesc(animal)}`}
+                {animal && ` 일주에 ${animal} 기운을 품고 있어 ${getAnimalDesc(animal)}`}
               </p>
             </div>
           </div>
@@ -111,24 +111,36 @@ export default function HomePage() {
         {/* 사주 원국 */}
         <div className="card">
           <div className="card__title">사주 원국</div>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 12, marginTop: -6, lineHeight: 1.5, textAlign: 'left' }}>
+            태어난 년·월·일·시를 간지(干支)로 나타낸 여덟 글자예요.
+          </p>
           <div className="pillars-grid">
             {pillarList.map(({ label, pillar }) => (
               <div key={label} className="pillar-card">
                 <div className="pillar-card__label">{label}</div>
-                <div className="pillar-card__char">{pillar.cheongan}</div>
-                <div className={`pillar-card__el el-${pillar.element}`}>{pillar.element}</div>
-                <div className="pillar-card__divider" />
-                <div className="pillar-card__char">{pillar.jiji}</div>
+                <div style={{ display: 'flex', gap: 1, alignItems: 'baseline' }}>
+                  <span className="pillar-card__char">{pillar.cheongan}</span>
+                  <span className="pillar-card__char">{pillar.jiji}</span>
+                </div>
+                <div style={{ fontSize: 10, fontWeight: 600, lineHeight: 1.4 }}>
+                  <span style={{ color: 'rgba(255,255,255,0.3)' }}>(</span>
+                  <span className={`el-${pillar.element}`}>{pillar.element}</span>
+                  <span className={`el-${pillar.jijiElement}`}>{pillar.jijiElement}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.3)' }}>)</span>
+                </div>
               </div>
             ))}
           </div>
           <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 8, lineHeight: 1.5, textAlign: 'left' }}>
+              신강신약은 일간(나)의 에너지가 사주 전체에서 얼마나 강한지를 나타내는 지표예요.
+            </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>신강신약</span>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>나의 사주</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#a78bfa' }}>{singangsinyak}</span>
               <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>{SINGANGSINYAK_INFO[singangsinyak]?.tag}</span>
             </div>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.65, margin: 0 }}>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.65, margin: 0, textAlign: 'left' }}>
               {SINGANGSINYAK_INFO[singangsinyak]?.desc}
             </p>
           </div>

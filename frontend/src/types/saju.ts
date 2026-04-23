@@ -2,6 +2,7 @@ export interface Pillar {
   cheongan: string;
   jiji: string;
   element: string;
+  jijiElement: string;
 }
 
 export interface Daewoon {

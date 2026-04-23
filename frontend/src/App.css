@@ -401,12 +401,14 @@ body {
   color: var(--text-muted);
   font-weight: 600;
   margin-bottom: 3px;
+  text-align: center;
 }
 
 .detail-box__val {
   font-size: 12px;
   color: var(--text-secondary);
   line-height: 1.4;
+  text-align: center;
 }
 
 /* ─── Daewoon timeline ─── */

@@ -29,6 +29,23 @@ export default function OnboardingPage() {
       setError('생년월일과 성별을 입력해주세요.');
       return;
     }
+    const y = Number(form.year);
+    const m = Number(form.month);
+    const d = Number(form.day);
+    const currentYear = new Date().getFullYear();
+    if (y < 1900 || y > currentYear) {
+      setError('올바른 연도를 입력해주세요.');
+      return;
+    }
+    if (m < 1 || m > 12) {
+      setError('월은 1~12 사이로 입력해주세요.');
+      return;
+    }
+    const maxDay = new Date(y, m, 0).getDate();
+    if (d < 1 || d > maxDay) {
+      setError(`${m}월은 최대 ${maxDay}일까지 있어요. 날짜를 다시 확인해주세요.`);
+      return;
+    }
     setError('');
     setLoading(true);
     try {

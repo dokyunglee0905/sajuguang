@@ -17,7 +17,8 @@ export interface BirthInfo {
 export interface Pillar {
   cheongan: string;
   jiji: string;
-  element: string; // 천간 기준 오행
+  element: string;     // 천간 기준 오행
+  jijiElement: string; // 지지 기준 오행
 }
 
 export interface SajuResult {
@@ -46,16 +47,17 @@ export interface Daewoon {
 function parsePillar(hangul: string): Pillar {
   const found = SIXTY_PILLARS.find((p: any) => p.combined.hangul === hangul);
   if (!found) {
-    // fallback: 첫 글자=천간, 두번째=지지
     const cg = hangul[0];
     const jj = hangul[1];
     const el = CHEONGAN.find(c => c.name === cg)?.element ?? '';
-    return { cheongan: cg, jiji: jj, element: el };
+    const jjEl = JIJI.find(j => j.name === jj)?.element ?? '';
+    return { cheongan: cg, jiji: jj, element: el, jijiElement: jjEl };
   }
   return {
     cheongan: found.tiangan.hangul,
     jiji: found.dizhi.hangul,
     element: found.tiangan.element,
+    jijiElement: JIJI.find(j => j.name === found.dizhi.hangul)?.element ?? '',
   };
 }
 
