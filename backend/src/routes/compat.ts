@@ -116,13 +116,13 @@ router.post('/one-to-one', async (req: Request, res: Response) => {
 
     // ── DB에서 조회 ──────────────────────────────────────
     const relKey = relationship && RELATIONSHIP_CONTEXT[relationship] ? relationship : '친구';
-    const { data: dbRow } = await supabase
+    const { data: dbRow } = supabase ? await supabase
       .from('compat_ohaeng')
       .select('*')
       .eq('ohaeng_me', el1)
       .eq('ohaeng_partner', el2)
       .eq('relationship', relKey)
-      .maybeSingle();
+      .maybeSingle() : { data: null };
 
     let compat: any;
     let source: 'db' | 'ai' = 'db';

@@ -121,11 +121,11 @@ router.post('/full', async (req: Request, res: Response) => {
 
     // ── DB에서 일주 기반 4개 섹션 조회 ──────────────────────
     const DB_SECTIONS = ['나는어떤사람인가', '일과적성', '돈과재물', '사람들과어울리는방식', '건강과에너지'];
-    const { data: dbRows } = await supabase
+    const { data: dbRows } = supabase ? await supabase
       .from('ilju_analysis')
       .select('section, content')
       .eq('ilju', ilju)
-      .in('section', DB_SECTIONS);
+      .in('section', DB_SECTIONS) : { data: null };
 
     const dbMap: Record<string, any> = {};
     for (const row of (dbRows ?? [])) {
