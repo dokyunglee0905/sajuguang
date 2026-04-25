@@ -7,6 +7,65 @@ const EL_COLORS: Record<string, string> = {
   목: '#4ade80', 화: '#f97316', 토: '#fbbf24', 금: '#94a3b8', 수: '#60a5fa',
 };
 
+const OHAENG_ORDER = ['목', '화', '토', '금', '수'];
+// 상생 순서로 오각형 배치: 목(상단) → 화(우상) → 토(우하) → 금(좌하) → 수(좌상)
+const PENTAGON_ANGLES = OHAENG_ORDER.map((_, i) => (i * 72 - 90) * (Math.PI / 180));
+
+function OhaengRadar({ ohaengCount }: { ohaengCount: Record<string, number> }) {
+  const cx = 110, cy = 110, maxR = 72;
+
+  const outerPts = PENTAGON_ANGLES.map(a => ({
+    x: cx + maxR * Math.cos(a),
+    y: cy + maxR * Math.sin(a),
+  }));
+
+  const dataPts = OHAENG_ORDER.map((el, i) => {
+    const r = ((ohaengCount[el] ?? 0) / 8) * maxR;
+    return { x: cx + r * Math.cos(PENTAGON_ANGLES[i]), y: cy + r * Math.sin(PENTAGON_ANGLES[i]) };
+  });
+
+  const toPath = (pts: { x: number; y: number }[]) =>
+    pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') + ' Z';
+
+  return (
+    <svg width="220" height="220" viewBox="0 0 220 220" style={{ display: 'block', margin: '0 auto' }}>
+      {/* 그리드 오각형 4단계 */}
+      {[0.25, 0.5, 0.75, 1].map(level => (
+        <path
+          key={level}
+          d={toPath(PENTAGON_ANGLES.map(a => ({ x: cx + maxR * level * Math.cos(a), y: cy + maxR * level * Math.sin(a) })))}
+          fill="none"
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth="1"
+        />
+      ))}
+      {/* 축선 */}
+      {outerPts.map((p, i) => (
+        <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+      ))}
+      {/* 데이터 영역 */}
+      <path d={toPath(dataPts)} fill="rgba(139,92,246,0.25)" stroke="rgba(139,92,246,0.7)" strokeWidth="1.5" />
+      {/* 데이터 포인트 */}
+      {dataPts.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r="3.5" fill={EL_COLORS[OHAENG_ORDER[i]]} />
+      ))}
+      {/* 라벨 */}
+      {OHAENG_ORDER.map((el, i) => {
+        const labelR = maxR + 18;
+        const lx = cx + labelR * Math.cos(PENTAGON_ANGLES[i]);
+        const ly = cy + labelR * Math.sin(PENTAGON_ANGLES[i]);
+        const count = ohaengCount[el] ?? 0;
+        return (
+          <g key={el}>
+            <text x={lx} y={ly - 3} textAnchor="middle" fontSize="13" fontWeight="700" fill={EL_COLORS[el]}>{el}</text>
+            <text x={lx} y={ly + 12} textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.4)">{count}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 const ANIMAL_EMOJI: Record<string, string> = {
   쥐: '🐭', 소: '🐮', 호랑이: '🐯', 토끼: '🐰', 용: '🐲', 뱀: '🐍',
   말: '🐴', 양: '🐑', 원숭이: '🐵', 닭: '🐔', 개: '🐶', 돼지: '🐷',
@@ -24,8 +83,6 @@ export default function HomePage() {
 
   const { pillars, mainOhaeng, animal, ohaengCount, topSipseong, singangsinyak } = sajuResult;
   const elColor = EL_COLORS[mainOhaeng.element] ?? '#fff';
-  const ohaengOrder = ['목', '화', '토', '금', '수'];
-  const totalOhaeng = Object.values(ohaengCount).reduce((a, b) => a + b, 0);
 
   const pillarList = [
     { label: '년주', pillar: pillars.year },
@@ -154,21 +211,9 @@ export default function HomePage() {
         {/* 오행 분포 */}
         <div className="card">
           <div className="card__title">오행 분포</div>
-          {ohaengOrder.map(el => {
-            const count = ohaengCount[el] ?? 0;
-            const pct = totalOhaeng > 0 ? (count / totalOhaeng) * 100 : 0;
-            return (
-              <div key={el} className="ohaeng-bar-row">
-                <span className={`ohaeng-bar-row__label el-${el}`}>{el}</span>
-                <div className="ohaeng-bar-row__bg">
-                  <div className="ohaeng-bar-row__fill" style={{ width: `${pct}%`, background: EL_COLORS[el] }} />
-                </div>
-                <span className="ohaeng-bar-row__count">{count}</span>
-              </div>
-            );
-          })}
-          <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {ohaengOrder.map(el => (
+          <OhaengRadar ohaengCount={ohaengCount} />
+          <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {OHAENG_ORDER.map((el: string) => (
               <span key={el} style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', lineHeight: 1.6 }}>
                 <span className={`el-${el}`} style={{ fontWeight: 700 }}>{el}</span>
                 {' '}· {OHAENG_BRIEF[el]?.replace(/^.+ — /, '')}
