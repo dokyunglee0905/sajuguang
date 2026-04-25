@@ -2,12 +2,19 @@ import { Router, Request, Response } from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { calculateSaju, BirthInfo } from '../saju/calculator';
 import { CHEONGAN } from '../data/cheongan';
+import { supabase } from '../db/supabase';
 
 const router = Router();
 
-function getTodayStr() {
-  const now = new Date();
-  return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
+function getKSTDate(): { dateKey: string; displayStr: string } {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const dateKey = kst.toISOString().slice(0, 10); // YYYY-MM-DD
+  const displayStr = `${kst.getUTCFullYear()}년 ${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일`;
+  return { dateKey, displayStr };
+}
+
+function buildBirthKey(info: BirthInfo): string {
+  return `${info.year}-${info.month}-${info.day}-${info.hour}-${info.minute}-${info.gender}`;
 }
 
 function buildPrompt(saju: ReturnType<typeof calculateSaju>, today: string, gender: string): string {
@@ -57,10 +64,28 @@ router.post('/today', async (req: Request, res: Response) => {
     unknownHour: !!unknownHour,
   };
 
+  const { dateKey, displayStr } = getKSTDate();
+  const birthKey = buildBirthKey(birthInfo);
+
   try {
+    // ── 캐시 조회 ──────────────────────────────────────────
+    if (supabase) {
+      const { data: cached } = await supabase
+        .from('daily_fortune')
+        .select('fortune')
+        .eq('birth_key', birthKey)
+        .eq('fortune_date', dateKey)
+        .maybeSingle();
+
+      if (cached) {
+        res.json({ date: displayStr, fortune: cached.fortune, cached: true });
+        return;
+      }
+    }
+
+    // ── Gemini 생성 ────────────────────────────────────────
     const saju = calculateSaju(birthInfo);
-    const today = getTodayStr();
-    const prompt = buildPrompt(saju, today, gender);
+    const prompt = buildPrompt(saju, displayStr, gender);
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -74,7 +99,16 @@ router.post('/today', async (req: Request, res: Response) => {
     }
 
     const fortune = JSON.parse(jsonMatch[0]);
-    res.json({ date: today, fortune });
+
+    // ── DB 저장 ────────────────────────────────────────────
+    if (supabase) {
+      await supabase.from('daily_fortune').upsert(
+        { birth_key: birthKey, fortune_date: dateKey, fortune },
+        { onConflict: 'birth_key,fortune_date' },
+      );
+    }
+
+    res.json({ date: displayStr, fortune, cached: false });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: '운세 생성 중 오류가 발생했습니다.' });
