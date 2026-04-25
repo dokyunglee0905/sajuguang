@@ -41,6 +41,24 @@ export interface FullAnalysis {
     조심할부분: string;
     에너지관리법: string;
   };
+  나의연애코드: {
+    끌리는유형: string;
+    연애할때진짜모습: string;
+    이별후패턴: string;
+    연애에서조심할것: string;
+  };
+  소통과갈등방식: {
+    소통스타일: string;
+    갈등상황반응: string;
+    상처받는말: string;
+    화해하는방식: string;
+  };
+  나의성장키워드: {
+    인생의테마: string;
+    가장빛나는때: string;
+    성장을위한조언: string;
+    나의인생문장: string;
+  };
 }
 
 export interface FullAnalysisResponse {

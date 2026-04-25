@@ -1,7 +1,7 @@
 /**
  * 일주 분석 DB 시딩 스크립트
- * 60 일주 × 5섹션 = 300개 항목 생성
- * (1 API 호출당 1개 일주의 5섹션 전부 → 총 60번 호출)
+ * 60 일주 × 8섹션 = 480개 항목 생성
+ * 이미 저장된 섹션은 스킵, 빠진 섹션만 생성
  * 실행: ts-node src/db/seed/seedIlju.ts
  */
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -70,6 +70,9 @@ const SECTIONS = [
   '돈과재물',
   '사람들과어울리는방식',
   '건강과에너지',
+  '나의연애코드',
+  '소통과갈등방식',
+  '나의성장키워드',
 ] as const;
 
 type Section = typeof SECTIONS[number];
@@ -95,15 +98,27 @@ const SECTION_SUBFIELDS: Record<Section, { fields: string[]; focus: string }> = 
     fields: ['타고난체질', '조심할부분', '에너지관리법'],
     focus: '타고난 체질과 건강 특성, 주의해야 할 부위, 컨디션 관리법',
   },
+  나의연애코드: {
+    fields: ['끌리는유형', '연애할때진짜모습', '이별후패턴', '연애에서조심할것'],
+    focus: '이성에게 끌리는 유형과 이유, 연애 시작 후 실제 모습과 태도, 이별 후 회복 방식과 반복 패턴, 연애에서 주의해야 할 점',
+  },
+  소통과갈등방식: {
+    fields: ['소통스타일', '갈등상황반응', '상처받는말', '화해하는방식'],
+    focus: '평소 대화하는 방식과 습관, 갈등이 생겼을 때 반응 패턴, 어떤 말이나 상황에 상처를 받는지, 관계를 회복하는 방식',
+  },
+  나의성장키워드: {
+    fields: ['인생의테마', '가장빛나는때', '성장을위한조언', '나의인생문장'],
+    focus: '이 일주가 평생 반복적으로 마주치는 삶의 테마, 에너지가 가장 빛나는 조건과 시기, 더 나은 삶을 위한 실질적 조언, 이 일주를 한 문장으로 표현',
+  },
 };
 
 // ─── 프롬프트 빌더 ──────────────────────────────────────────
-function buildPrompt(entry: IljuEntry): string {
+function buildPrompt(entry: IljuEntry, targetSections: readonly Section[]): string {
   const cg = CHEONGAN_INFO[entry.cg];
   const jj = JIJI_INFO[entry.jj];
   const relation = getCgJjRelation(cg.element, jj.element);
 
-  const sectionSpecs = SECTIONS.map(s => {
+  const sectionSpecs = targetSections.map(s => {
     const spec = SECTION_SUBFIELDS[s];
     const fields = spec.fields.map(f => `    "${f}": "3~5줄"`).join(',\n');
     return `  "${s}": {\n${fields}\n  }`;
@@ -160,7 +175,7 @@ async function generateAndSave(entry: IljuEntry, genAI: GoogleGenerativeAI): Pro
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const result = await model.generateContent(buildPrompt(entry));
+      const result = await model.generateContent(buildPrompt(entry, missingSections));
       const text = result.response.text().trim();
       const match = text.match(/\{[\s\S]*\}/);
       if (!match) throw new Error('JSON 없음');
