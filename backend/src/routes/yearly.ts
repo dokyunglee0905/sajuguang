@@ -4,6 +4,7 @@ import { calculateSaju as manseryeokCalc } from '@fullstackfamily/manseryeok';
 import { calculateSaju, BirthInfo } from '../saju/calculator';
 import { CHEONGAN } from '../data/cheongan';
 import { calcSeun } from '../saju/analysisData';
+import { supabase } from '../db/supabase';
 
 const router = Router();
 
@@ -13,6 +14,10 @@ function getMonthPillar(year: number, month: number): { cheongan: string; jiji: 
   const cg = mp[0];
   const el = CHEONGAN.find(c => c.name === cg)?.element ?? '';
   return { cheongan: cg, jiji: mp[1], element: el };
+}
+
+function buildBirthKey(info: BirthInfo): string {
+  return `${info.year}-${info.month}-${info.day}-${info.hour}-${info.minute}-${info.gender}`;
 }
 
 function buildAnnualPrompt(data: Record<string, any>, gender: string, targetYear: number): string {
@@ -88,8 +93,27 @@ router.post('/annual', async (req: Request, res: Response) => {
     gender, unknownHour: !!unknownHour,
   };
   const ty = Number(targetYear) || new Date().getFullYear();
+  const birthKey = buildBirthKey(birthInfo);
+  const periodKey = String(ty);
 
   try {
+    // ── 캐시 조회 ──────────────────────────────────────────
+    if (supabase) {
+      const { data: cached } = await supabase
+        .from('fortune_cache')
+        .select('fortune')
+        .eq('birth_key', birthKey)
+        .eq('cache_type', 'annual')
+        .eq('period_key', periodKey)
+        .maybeSingle();
+
+      if (cached) {
+        res.json({ year: ty, fortune: cached.fortune, cached: true });
+        return;
+      }
+    }
+
+    // ── Gemini 생성 ────────────────────────────────────────
     const saju = calculateSaju(birthInfo);
     const ilganEl = CHEONGAN.find(c => c.name === saju.ilgan)?.element ?? '';
     const seun = calcSeun(ty);
@@ -122,7 +146,17 @@ router.post('/annual', async (req: Request, res: Response) => {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) { res.status(500).json({ error: '운세 생성 실패' }); return; }
 
-    res.json({ year: ty, fortune: JSON.parse(jsonMatch[0]) });
+    const fortune = JSON.parse(jsonMatch[0]);
+
+    // ── DB 저장 ────────────────────────────────────────────
+    if (supabase) {
+      await supabase.from('fortune_cache').upsert(
+        { birth_key: birthKey, cache_type: 'annual', period_key: periodKey, fortune },
+        { onConflict: 'birth_key,cache_type,period_key' },
+      );
+    }
+
+    res.json({ year: ty, fortune, cached: false });
   } catch (e: any) {
     console.error(e);
     res.status(500).json({ error: '신년운세 생성 중 오류가 발생했습니다.', detail: e?.message });
@@ -145,8 +179,27 @@ router.post('/monthly', async (req: Request, res: Response) => {
   const now = new Date();
   const ty = Number(targetYear) || now.getFullYear();
   const tm = Number(targetMonth) || (now.getMonth() + 1);
+  const birthKey = buildBirthKey(birthInfo);
+  const periodKey = `${ty}-${String(tm).padStart(2, '0')}`;
 
   try {
+    // ── 캐시 조회 ──────────────────────────────────────────
+    if (supabase) {
+      const { data: cached } = await supabase
+        .from('fortune_cache')
+        .select('fortune')
+        .eq('birth_key', birthKey)
+        .eq('cache_type', 'monthly')
+        .eq('period_key', periodKey)
+        .maybeSingle();
+
+      if (cached) {
+        res.json({ year: ty, month: tm, fortune: cached.fortune, cached: true });
+        return;
+      }
+    }
+
+    // ── Gemini 생성 ────────────────────────────────────────
     const saju = calculateSaju(birthInfo);
     const ilganEl = CHEONGAN.find(c => c.name === saju.ilgan)?.element ?? '';
     const seun = calcSeun(ty);
@@ -181,7 +234,17 @@ router.post('/monthly', async (req: Request, res: Response) => {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) { res.status(500).json({ error: '운세 생성 실패' }); return; }
 
-    res.json({ year: ty, month: tm, fortune: JSON.parse(jsonMatch[0]) });
+    const fortune = JSON.parse(jsonMatch[0]);
+
+    // ── DB 저장 ────────────────────────────────────────────
+    if (supabase) {
+      await supabase.from('fortune_cache').upsert(
+        { birth_key: birthKey, cache_type: 'monthly', period_key: periodKey, fortune },
+        { onConflict: 'birth_key,cache_type,period_key' },
+      );
+    }
+
+    res.json({ year: ty, month: tm, fortune, cached: false });
   } catch (e: any) {
     console.error(e);
     res.status(500).json({ error: '월별운세 생성 중 오류가 발생했습니다.', detail: e?.message });
