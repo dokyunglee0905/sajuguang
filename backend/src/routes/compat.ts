@@ -46,6 +46,7 @@ const SIPSEONG_GROUP_SYNERGY: Record<string, string> = {
 function buildIljuCompatDesc(
   ilgan1: string, jijiEl1: string, ilju1: string,
   ilgan2: string, jijiEl2: string, ilju2: string,
+  name1: string, name2: string,
 ): string {
   const ss1sees2 = SIPSEONG_TABLE[ilgan1]?.[ilgan2] ?? '';
   const ss2sees1 = SIPSEONG_TABLE[ilgan2]?.[ilgan1] ?? '';
@@ -55,7 +56,7 @@ function buildIljuCompatDesc(
 
   let mainDesc = '';
   if (ss1sees2 && desc1 && ss2sees1 && desc2) {
-    mainDesc = `${ilju1}일주에게 ${ilju2}일주는 ${ss1sees2}(${desc1.short})처럼 느껴지고, ${ilju2}일주에게 ${ilju1}일주는 ${ss2sees1}(${desc2.short})처럼 다가오는 사이입니다.`;
+    mainDesc = `${name1}님(${ilju1})에게 ${name2}님(${ilju2})은 ${ss1sees2}(${desc1.short})처럼 느껴지고, ${name2}님에게 ${name1}님은 ${ss2sees1}(${desc2.short})처럼 다가오는 사이입니다.`;
   }
 
   let jijiDesc = '';
@@ -66,13 +67,13 @@ function buildIljuCompatDesc(
   return `${mainDesc} ${jijiDesc}`.trim();
 }
 
-function buildSipseongCompatDesc(topSS1: string[], topSS2: string[]): string {
+function buildSipseongCompatDesc(topSS1: string[], topSS2: string[], name1: string, name2: string): string {
   const g1 = SIPSEONG_DESC[topSS1[0]]?.group ?? topSS1[0];
   const g2 = SIPSEONG_DESC[topSS2[0]]?.group ?? topSS2[0];
   const trait1 = SIPSEONG_GROUP_TRAITS[g1] ?? g1;
   const trait2 = SIPSEONG_GROUP_TRAITS[g2] ?? g2;
   const synergy = SIPSEONG_GROUP_SYNERGY[`${g1}+${g2}`] ?? SIPSEONG_GROUP_SYNERGY[`${g2}+${g1}`] ?? '서로 다른 기질이 만나 새로운 가능성을 열어주는 관계예요.';
-  return `첫 번째 분은 ${trait1} 기질이, 두 번째 분은 ${trait2} 기질이 두드러집니다. ${synergy}`;
+  return `${name1}님은 ${trait1} 기질이, ${name2}님은 ${trait2} 기질이 두드러집니다. ${synergy}`;
 }
 
 // DB에 없을 때 Gemini 폴백
@@ -167,8 +168,10 @@ router.post('/one-to-one', async (req: Request, res: Response) => {
     const jijiEl1 = s1.dayPillar.jijiElement;
     const jijiEl2 = s2.dayPillar.jijiElement;
 
-    const 일주궁합 = buildIljuCompatDesc(s1.ilgan, jijiEl1, ilju1, s2.ilgan, jijiEl2, ilju2);
-    const 성향궁합 = buildSipseongCompatDesc(topSS1, topSS2);
+    const name1 = person1.name || '나';
+    const name2 = person2.name || '상대방';
+    const 일주궁합 = buildIljuCompatDesc(s1.ilgan, jijiEl1, ilju1, s2.ilgan, jijiEl2, ilju2, name1, name2);
+    const 성향궁합 = buildSipseongCompatDesc(topSS1, topSS2, name1, name2);
 
     const p1Data = {
       이름: person1.name || '나', 성별: p1Info.gender === '남' ? '남성' : '여성',
