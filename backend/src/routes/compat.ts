@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { calculateSaju, BirthInfo } from '../saju/calculator';
 import { CHEONGAN } from '../data/cheongan';
 import { OHAENG_SANGSAENG, OHAENG_SANGGEUK } from '../data/ohaeng';
+import { SIPSEONG_TABLE, SIPSEONG_DESC } from '../data/sipseong';
 import { supabase } from '../db/supabase';
 
 const router = Router();
@@ -14,6 +15,64 @@ function getOhaengRelation(el1: string, el2: string): { type: string; detail: st
   if (OHAENG_SANGGEUK[el1] === el2) return { type: '상극', detail: `${el1}이 ${el2}을 극하는 관계로, 에너지 방향이 엇갈릴 수 있음` };
   if (OHAENG_SANGGEUK[el2] === el1) return { type: '상극', detail: `${el2}이 ${el1}을 극하는 관계로, 에너지 방향이 엇갈릴 수 있음` };
   return { type: '중립', detail: '직접적인 상생·상극 관계가 없는 중립적 조합' };
+}
+
+const SIPSEONG_GROUP_TRAITS: Record<string, string> = {
+  비겁: '독립적이고 자존심 강한',
+  식상: '표현력 풍부하고 창의적인',
+  재성: '현실 감각이 뛰어나고 실용적인',
+  관성: '책임감 있고 추진력이 강한',
+  인성: '배려심 깊고 사려 깊은',
+};
+
+const SIPSEONG_GROUP_SYNERGY: Record<string, string> = {
+  '비겁+비겁': '서로 비슷한 기질로 공감대가 깊지만, 고집이 맞닥뜨릴 때 한 발씩 양보하는 것이 중요해요.',
+  '비겁+식상': '한 분은 확신 있게 나아가고, 다른 분은 풍부하게 표현해 서로의 부족한 부분을 채워줘요.',
+  '비겁+재성': '한 분의 뚝심과 다른 분의 현실 감각이 만나 실질적인 성과를 만들어내는 조합이에요.',
+  '비겁+관성': '한 분의 독립심과 다른 분의 책임감이 팽팽하게 균형을 이루며 서로를 단단하게 만들어요.',
+  '비겁+인성': '한 분은 앞으로 나아가고, 다른 분은 따뜻하게 감싸주는 안정적인 관계예요.',
+  '식상+식상': '두 분 모두 표현이 풍부하고 감각적이라 함께하면 즐겁고 창의적인 에너지가 넘쳐요.',
+  '식상+재성': '창의적인 아이디어와 현실 실행력이 결합하는 강력한 조합으로, 함께라면 가능성이 커요.',
+  '식상+관성': '표현하고 싶은 에너지와 방향을 잡으려는 기운이 만나 긴장과 자극이 공존하는 관계예요.',
+  '식상+인성': '한 분은 발산하고, 다른 분은 받아주는 이상적인 음양 구조로 서로를 이해하는 힘이 커요.',
+  '재성+재성': '두 분 모두 현실적이고 안정을 추구해 탄탄한 기반을 함께 쌓아가기 좋아요.',
+  '재성+관성': '현실 감각과 추진력이 만나 강력한 시너지를 내지만, 때로는 속도 조율이 필요해요.',
+  '재성+인성': '한 분의 실용성과 다른 분의 사려 깊음이 균형을 이루는 신뢰감 높은 관계예요.',
+  '관성+관성': '두 분 모두 책임감과 카리스마가 강해 서로 존중하며 방향을 함께 결정하는 것이 중요해요.',
+  '관성+인성': '한 분의 추진력을 다른 분의 배려가 부드럽게 감싸주는, 서로를 성장시키는 관계예요.',
+  '인성+인성': '두 분 모두 깊은 배려와 이해를 갖고 있어 정서적으로 매우 안정된 관계를 만들어요.',
+};
+
+function buildIljuCompatDesc(
+  ilgan1: string, jijiEl1: string, ilju1: string,
+  ilgan2: string, jijiEl2: string, ilju2: string,
+): string {
+  const ss1sees2 = SIPSEONG_TABLE[ilgan1]?.[ilgan2] ?? '';
+  const ss2sees1 = SIPSEONG_TABLE[ilgan2]?.[ilgan1] ?? '';
+  const desc1 = SIPSEONG_DESC[ss1sees2];
+  const desc2 = SIPSEONG_DESC[ss2sees1];
+  const jijiRel = getOhaengRelation(jijiEl1, jijiEl2);
+
+  let mainDesc = '';
+  if (ss1sees2 && desc1 && ss2sees1 && desc2) {
+    mainDesc = `${ilju1}일주에게 ${ilju2}일주는 ${ss1sees2}(${desc1.short})처럼 느껴지고, ${ilju2}일주에게 ${ilju1}일주는 ${ss2sees1}(${desc2.short})처럼 다가오는 사이입니다.`;
+  }
+
+  let jijiDesc = '';
+  if (jijiRel.type === '비화') jijiDesc = `두 분의 일지 오행이 같아 근본적인 정서 결이 닮아 있어 자연스럽게 통하는 부분이 많아요.`;
+  else if (jijiRel.type === '상생') jijiDesc = `일지 오행이 상생 관계라 함께 있을수록 서로의 기운을 살려주는 든든한 조합이에요.`;
+  else jijiDesc = `일지 오행이 상극 관계로, 서로의 방식이 충돌할 때 의식적으로 맞춰가려는 노력이 필요해요.`;
+
+  return `${mainDesc} ${jijiDesc}`.trim();
+}
+
+function buildSipseongCompatDesc(topSS1: string[], topSS2: string[]): string {
+  const g1 = SIPSEONG_DESC[topSS1[0]]?.group ?? topSS1[0];
+  const g2 = SIPSEONG_DESC[topSS2[0]]?.group ?? topSS2[0];
+  const trait1 = SIPSEONG_GROUP_TRAITS[g1] ?? g1;
+  const trait2 = SIPSEONG_GROUP_TRAITS[g2] ?? g2;
+  const synergy = SIPSEONG_GROUP_SYNERGY[`${g1}+${g2}`] ?? SIPSEONG_GROUP_SYNERGY[`${g2}+${g1}`] ?? '서로 다른 기질이 만나 새로운 가능성을 열어주는 관계예요.';
+  return `첫 번째 분은 ${trait1} 기질이, 두 번째 분은 ${trait2} 기질이 두드러집니다. ${synergy}`;
 }
 
 // DB에 없을 때 Gemini 폴백
@@ -103,6 +162,14 @@ router.post('/one-to-one', async (req: Request, res: Response) => {
     const topSS1 = Object.entries(s1.sipseongScores).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k);
     const topSS2 = Object.entries(s2.sipseongScores).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k);
 
+    const ilju1 = `${s1.dayPillar.cheongan}${s1.dayPillar.jiji}`;
+    const ilju2 = `${s2.dayPillar.cheongan}${s2.dayPillar.jiji}`;
+    const jijiEl1 = s1.dayPillar.jijiElement;
+    const jijiEl2 = s2.dayPillar.jijiElement;
+
+    const 일주궁합 = buildIljuCompatDesc(s1.ilgan, jijiEl1, ilju1, s2.ilgan, jijiEl2, ilju2);
+    const 성향궁합 = buildSipseongCompatDesc(topSS1, topSS2);
+
     const p1Data = {
       이름: person1.name || '나', 성별: p1Info.gender === '남' ? '남성' : '여성',
       메인오행: el1, 일주: `${s1.dayPillar.cheongan}${s1.dayPillar.jiji}`,
@@ -132,6 +199,8 @@ router.post('/one-to-one', async (req: Request, res: Response) => {
         score: dbRow.score,
         종합한마디: dbRow.summary,
         오행궁합: dbRow.ohaeng_desc,
+        일주궁합,
+        성향궁합,
         함께하면좋은것: (dbRow.strengths as string[]).join('\n'),
         조심할것: (dbRow.cautions as string[]).join('\n'),
         팁: dbRow.tip,
@@ -145,6 +214,8 @@ router.post('/one-to-one', async (req: Request, res: Response) => {
         score: geminiResult.score,
         종합한마디: geminiResult.summary,
         오행궁합: geminiResult.ohaeng_desc,
+        일주궁합,
+        성향궁합,
         함께하면좋은것: (geminiResult.strengths as string[]).join('\n'),
         조심할것: (geminiResult.cautions as string[]).join('\n'),
         팁: geminiResult.tip,
