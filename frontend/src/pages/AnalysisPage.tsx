@@ -133,19 +133,22 @@ const SECTIONS: {
 ];
 
 const CACHE_KEY = 'sajuguang_analysis_v2';
+const CACHE_YEAR = new Date().getFullYear();
 
 function getCached(birthKey: string) {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const cached = JSON.parse(raw);
-    if (cached.birthKey === birthKey) return cached.data as FullAnalysisResponse;
+    if (cached.birthKey === birthKey && cached.year === CACHE_YEAR) {
+      return cached.data as FullAnalysisResponse;
+    }
   } catch { /* empty */ }
   return null;
 }
 
 function setCache(birthKey: string, data: FullAnalysisResponse) {
-  localStorage.setItem(CACHE_KEY, JSON.stringify({ birthKey, data }));
+  localStorage.setItem(CACHE_KEY, JSON.stringify({ birthKey, year: CACHE_YEAR, data }));
 }
 
 export default function AnalysisPage() {
@@ -257,12 +260,6 @@ export default function AnalysisPage() {
                     </button>
                   ))}
                 </div>
-                <button
-                  style={{ marginTop: 20, width: '100%', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '12px', color: 'rgba(255,255,255,0.3)', fontSize: 12, cursor: 'pointer' }}
-                  onClick={() => { setResult(null); fetchAnalysis(); }}
-                >
-                  분석 다시 받기
-                </button>
               </div>
             )}
 
