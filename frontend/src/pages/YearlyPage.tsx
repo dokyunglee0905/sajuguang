@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSajuStore } from '../store/useSajuStore';
 import { getAnnualFortune, getMonthlyFortune } from '../api/yearly';
 import type { AnnualFortune, MonthlyFortune } from '../api/yearly';
+import LoadingBar from '../components/LoadingBar';
 
 type Tab = 'annual' | 'monthly';
 
@@ -65,16 +66,6 @@ function FortuneCard({ title, icon, text }: { title: string; icon: string; text:
   );
 }
 
-function LoadingCard({ text }: { text: string }) {
-  return (
-    <div style={{ textAlign: 'center', padding: '60px 0' }}>
-      <div style={{ fontSize: 32, marginBottom: 16 }}>✦</div>
-      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7 }}>
-        {text}<br />잠시만 기다려주세요
-      </p>
-    </div>
-  );
-}
 
 function ErrorCard({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -224,7 +215,7 @@ export default function YearlyPage() {
             </div>
           )}
 
-          {annualLoading && <LoadingCard text="신년운세를 분석하고 있어요" />}
+          {annualLoading && <LoadingBar isLoading={annualLoading} estimatedSeconds={15} label="신년운세를 분석하고 있어요" />}
           {annualError && !annualLoading && <ErrorCard message={annualError} onRetry={fetchAnnual} />}
 
           {annualFortune && !annualLoading && (
@@ -256,7 +247,7 @@ export default function YearlyPage() {
             <button onClick={nextMonth} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: 22, cursor: 'pointer', padding: '0 12px', lineHeight: 1 }}>›</button>
           </div>
 
-          {monthlyLoading && <LoadingCard text="월별운세를 분석하고 있어요" />}
+          {monthlyLoading && <LoadingBar isLoading={monthlyLoading} estimatedSeconds={15} label="월별운세를 분석하고 있어요" />}
           {monthlyError && !monthlyLoading && <ErrorCard message={monthlyError} onRetry={fetchMonthly} />}
 
           {monthlyFortune && !monthlyLoading && (

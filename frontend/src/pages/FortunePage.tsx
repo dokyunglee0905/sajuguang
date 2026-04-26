@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSajuStore } from '../store/useSajuStore';
 import { getTodayFortune } from '../api/fortune';
 import type { TodayFortune } from '../api/fortune';
+import LoadingBar from '../components/LoadingBar';
 
 const CATEGORIES: { key: keyof TodayFortune; label: string; icon: string }[] = [
   { key: '종합운',     label: '종합운',     icon: '🌟' },
@@ -96,12 +97,7 @@ export default function FortunePage() {
 
         {/* 로딩 */}
         {loading && (
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <div style={{ fontSize: 32, marginBottom: 16 }}>✦</div>
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7 }}>
-              오늘의 운세를 분석하고 있어요<br />잠시만 기다려주세요
-            </p>
-          </div>
+          <LoadingBar isLoading={loading} estimatedSeconds={12} label="오늘의 운세를 불러오고 있어요" />
         )}
 
         {/* 에러 */}

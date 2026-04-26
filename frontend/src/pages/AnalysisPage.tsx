@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSajuStore } from '../store/useSajuStore';
 import { getFullAnalysis } from '../api/analysis';
 import type { FullAnalysis, FullAnalysisResponse } from '../api/analysis';
+import LoadingBar from '../components/LoadingBar';
 
 const SECTIONS: {
   key: keyof FullAnalysis;
@@ -205,13 +206,7 @@ export default function AnalysisPage() {
 
         {/* 로딩 */}
         {loading && (
-          <div style={{ textAlign: 'center', padding: '80px 24px' }}>
-            <div style={{ fontSize: 36, marginBottom: 16 }}>✦</div>
-            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.55)', lineHeight: 1.8 }}>
-              만세력을 바탕으로<br />당신의 사주를 깊이 분석하고 있어요<br />
-              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>잠시만 기다려주세요 (약 10~20초)</span>
-            </p>
-          </div>
+          <LoadingBar isLoading={loading} estimatedSeconds={15} label="사주 분석을 불러오고 있어요" />
         )}
 
         {/* 에러 */}
