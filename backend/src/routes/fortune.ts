@@ -3,7 +3,7 @@ import { calculateSaju } from '../saju/calculator';
 import { CHEONGAN } from '../data/cheongan';
 import { supabase } from '../db/supabase';
 import { generateJSON } from '../lib/gemini';
-import { buildBirthKey, parseBirthInfo } from '../lib/birthUtils';
+import { validateBirthFields, buildBirthKey, parseBirthInfo } from '../lib/birthUtils';
 
 const router = Router();
 
@@ -44,14 +44,14 @@ function buildPrompt(saju: ReturnType<typeof calculateSaju>, today: string, gend
 }
 
 router.post('/today', async (req: Request, res: Response) => {
-  const { year, month, day, gender } = req.body;
-
-  if (!year || !month || !day || !gender) {
-    res.status(400).json({ error: '생년월일과 성별은 필수입니다.' });
+  const validationError = validateBirthFields(req.body);
+  if (validationError) {
+    res.status(400).json({ error: validationError });
     return;
   }
 
   const birthInfo = parseBirthInfo(req.body);
+  const { gender } = req.body;
   const { dateKey, displayStr } = getKSTDate();
   const birthKey = buildBirthKey(birthInfo);
 

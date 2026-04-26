@@ -5,7 +5,7 @@ import { CHEONGAN } from '../data/cheongan';
 import { calcSeun } from '../saju/analysisData';
 import { supabase } from '../db/supabase';
 import { generateJSON } from '../lib/gemini';
-import { buildBirthKey, parseBirthInfo } from '../lib/birthUtils';
+import { validateBirthFields, buildBirthKey, parseBirthInfo } from '../lib/birthUtils';
 
 const router = Router();
 
@@ -77,12 +77,13 @@ ${JSON.stringify(data, null, 2)}
 }
 
 router.post('/annual', async (req: Request, res: Response) => {
-  const { year, month, day, gender, targetYear } = req.body;
-  if (!year || !month || !day || !gender) {
-    res.status(400).json({ error: '생년월일과 성별은 필수입니다.' });
+  const validationError = validateBirthFields(req.body);
+  if (validationError) {
+    res.status(400).json({ error: validationError });
     return;
   }
 
+  const { gender, targetYear } = req.body;
   const birthInfo = parseBirthInfo(req.body);
   const ty = Number(targetYear) || new Date().getFullYear();
   const birthKey = buildBirthKey(birthInfo);
@@ -107,7 +108,7 @@ router.post('/annual', async (req: Request, res: Response) => {
     const saju = calculateSaju(birthInfo);
     const ilganEl = CHEONGAN.find(c => c.name === saju.ilgan)?.element ?? '';
     const seun = calcSeun(ty);
-    const ageInYear = ty - Number(year);
+    const ageInYear = ty - birthInfo.year;
     const currentDaewoon = saju.daewoonList.find(d => ageInYear >= d.startAge && ageInYear <= d.endAge);
 
     const analysisData = {
@@ -144,12 +145,13 @@ router.post('/annual', async (req: Request, res: Response) => {
 });
 
 router.post('/monthly', async (req: Request, res: Response) => {
-  const { year, month, day, gender, targetYear, targetMonth } = req.body;
-  if (!year || !month || !day || !gender) {
-    res.status(400).json({ error: '생년월일과 성별은 필수입니다.' });
+  const validationError = validateBirthFields(req.body);
+  if (validationError) {
+    res.status(400).json({ error: validationError });
     return;
   }
 
+  const { gender, targetYear, targetMonth } = req.body;
   const birthInfo = parseBirthInfo(req.body);
   const now = new Date();
   const ty = Number(targetYear) || now.getFullYear();
@@ -177,7 +179,7 @@ router.post('/monthly', async (req: Request, res: Response) => {
     const ilganEl = CHEONGAN.find(c => c.name === saju.ilgan)?.element ?? '';
     const seun = calcSeun(ty);
     const monthPillar = getMonthPillar(ty, tm);
-    const ageInYear = ty - Number(year);
+    const ageInYear = ty - birthInfo.year;
     const currentDaewoon = saju.daewoonList.find(d => ageInYear >= d.startAge && ageInYear <= d.endAge);
 
     const analysisData = {

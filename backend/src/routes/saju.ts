@@ -1,29 +1,21 @@
 import { Router, Request, Response } from 'express';
-import { calculateSaju, BirthInfo } from '../saju/calculator';
+import { calculateSaju } from '../saju/calculator';
 import { CHEONGAN } from '../data/cheongan';
 import { JIJI } from '../data/jiji';
 import { OHAENG_DESC } from '../data/ohaeng';
 import { SIPSEONG_DESC } from '../data/sipseong';
+import { validateBirthFields, parseBirthInfo } from '../lib/birthUtils';
 
 const router = Router();
 
 router.post('/calculate', (req: Request, res: Response) => {
-  const { year, month, day, hour, minute, gender, unknownHour } = req.body;
-
-  if (!year || !month || !day || !gender) {
-    res.status(400).json({ error: '년, 월, 일, 성별은 필수입니다.' });
+  const validationError = validateBirthFields(req.body);
+  if (validationError) {
+    res.status(400).json({ error: validationError });
     return;
   }
 
-  const birthInfo: BirthInfo = {
-    year: Number(year),
-    month: Number(month),
-    day: Number(day),
-    hour: unknownHour ? 0 : Number(hour ?? 0),
-    minute: unknownHour ? 0 : Number(minute ?? 0),
-    gender,
-    unknownHour: !!unknownHour,
-  };
+  const birthInfo = parseBirthInfo(req.body);
 
   const result = calculateSaju(birthInfo);
 

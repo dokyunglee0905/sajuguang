@@ -4,7 +4,7 @@ import { CHEONGAN } from '../data/cheongan';
 import { calcYongshin, calcTougan, calcHapChung, calcSeun, getJijangganInfo } from '../saju/analysisData';
 import { supabase } from '../db/supabase';
 import { generateJSON } from '../lib/gemini';
-import { buildBirthKey, parseBirthInfo } from '../lib/birthUtils';
+import { validateBirthFields, buildBirthKey, parseBirthInfo } from '../lib/birthUtils';
 
 const router = Router();
 
@@ -84,13 +84,13 @@ ${JSON.stringify(analysisData, null, 2)}
 }
 
 router.post('/full', async (req: Request, res: Response) => {
-  const { year, month, day, gender } = req.body;
-
-  if (!year || !month || !day || !gender) {
-    res.status(400).json({ error: '생년월일과 성별은 필수입니다.' });
+  const validationError = validateBirthFields(req.body);
+  if (validationError) {
+    res.status(400).json({ error: validationError });
     return;
   }
 
+  const { gender } = req.body;
   const birthInfo = parseBirthInfo(req.body);
   const birthKey = buildBirthKey(birthInfo);
 
@@ -98,7 +98,7 @@ router.post('/full', async (req: Request, res: Response) => {
     const saju = calculateSaju(birthInfo);
     const ilganEl = CHEONGAN.find(c => c.name === saju.ilgan)?.element ?? '';
     const currentYear = new Date().getFullYear();
-    const age = currentYear - Number(year);
+    const age = currentYear - birthInfo.year;
 
     const yongshin = calcYongshin(saju.singangsinyak, ilganEl);
     const hapchung = calcHapChung(saju);
