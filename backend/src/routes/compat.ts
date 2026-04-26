@@ -43,6 +43,12 @@ const SIPSEONG_GROUP_SYNERGY: Record<string, string> = {
   '인성+인성': '두 분 모두 깊은 배려와 이해를 갖고 있어 정서적으로 매우 안정된 관계를 만들어요.',
 };
 
+// '나', '상대방' 같은 대명사엔 님을 붙이지 않음
+const DEFAULT_NAMES = new Set(['나', '상대방']);
+function nim(name: string): string {
+  return DEFAULT_NAMES.has(name) ? name : `${name}님`;
+}
+
 function buildIljuCompatDesc(
   ilgan1: string, jijiEl1: string, ilju1: string,
   ilgan2: string, jijiEl2: string, ilju2: string,
@@ -56,7 +62,7 @@ function buildIljuCompatDesc(
 
   let mainDesc = '';
   if (ss1sees2 && desc1 && ss2sees1 && desc2) {
-    mainDesc = `${name1}님(${ilju1})에게 ${name2}님(${ilju2})은 ${ss1sees2}(${desc1.short})처럼 느껴지고, ${name2}님에게 ${name1}님은 ${ss2sees1}(${desc2.short})처럼 다가오는 사이입니다.`;
+    mainDesc = `${nim(name1)}(${ilju1})에게 ${nim(name2)}(${ilju2})은 ${ss1sees2}(${desc1.short})처럼 느껴지고, ${nim(name2)}에게 ${nim(name1)}은 ${ss2sees1}(${desc2.short})처럼 다가오는 사이입니다.`;
   }
 
   let jijiDesc = '';
@@ -69,8 +75,8 @@ function buildIljuCompatDesc(
 
 function personalizeText(text: string, el1: string, el2: string, name1: string, name2: string): string {
   return text
-    .replace(new RegExp(`메인 오행이 ${el1}인 분`, 'g'), `${name1}님`)
-    .replace(new RegExp(`메인 오행이 ${el2}인 분`, 'g'), `${name2}님`);
+    .replace(new RegExp(`메인 오행이 ${el1}인 분`, 'g'), nim(name1))
+    .replace(new RegExp(`메인 오행이 ${el2}인 분`, 'g'), nim(name2));
 }
 
 function buildSipseongCompatDesc(topSS1: string[], topSS2: string[], name1: string, name2: string): string {
@@ -79,7 +85,7 @@ function buildSipseongCompatDesc(topSS1: string[], topSS2: string[], name1: stri
   const trait1 = SIPSEONG_GROUP_TRAITS[g1] ?? g1;
   const trait2 = SIPSEONG_GROUP_TRAITS[g2] ?? g2;
   const synergy = SIPSEONG_GROUP_SYNERGY[`${g1}+${g2}`] ?? SIPSEONG_GROUP_SYNERGY[`${g2}+${g1}`] ?? '서로 다른 기질이 만나 새로운 가능성을 열어주는 관계예요.';
-  return `${name1}님은 ${trait1} 기질이, ${name2}님은 ${trait2} 기질이 두드러집니다. ${synergy}`;
+  return `${nim(name1)}은 ${trait1} 기질이, ${nim(name2)}은 ${trait2} 기질이 두드러집니다. ${synergy}`;
 }
 
 // DB에 없을 때 Gemini 폴백
