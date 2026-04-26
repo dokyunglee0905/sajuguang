@@ -224,9 +224,12 @@ export default function AnalysisPage() {
             {/* ── 그리드 뷰 ── */}
             {!selectedSection && (
               <div style={{ padding: '16px 16px 100px' }}>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 16 }}>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>
                   항목을 선택해 자세한 분석을 확인해보세요
                 </p>
+                <div className="ai-notice" style={{ marginBottom: 16 }}>
+                  <strong>✦ AI 생성 결과</strong> · 사주 원국은 전통 명리학 알고리즘으로 계산되며, 아래 분석 내용은 그 데이터를 바탕으로 AI가 생성했어요.
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                   {SECTIONS.map(s => (
                     <button
@@ -279,6 +282,9 @@ export default function AnalysisPage() {
                     </div>
                   );
                 })}
+                <div className="ai-notice">
+                  <strong>✦ AI 생성 결과</strong> · 사주 원국은 전통 명리학 알고리즘으로 계산한 값이며, 위 해석은 AI가 생성한 결과예요.
+                </div>
               </div>
             )}
           </>

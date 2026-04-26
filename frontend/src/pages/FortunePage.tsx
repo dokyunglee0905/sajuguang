@@ -123,6 +123,12 @@ export default function FortunePage() {
           </div>
         ))}
 
+        {fortune && !loading && (
+          <div className="ai-notice">
+            <strong>✦ AI 생성 결과</strong> · 사주 원국은 전통 명리학 알고리즘으로 계산한 값이며, 위 운세 내용은 AI가 생성한 결과예요.
+          </div>
+        )}
+
       </div>
     </div>
   );

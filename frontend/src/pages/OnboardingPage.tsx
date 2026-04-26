@@ -189,6 +189,12 @@ export default function OnboardingPage() {
           </div>
         </div>
 
+        <div className="ai-notice">
+          <strong>✦ 서비스 안내</strong><br />
+          사주 원국(년·월·일·시의 간지)은 전통 명리학 알고리즘으로 계산돼요.
+          심층 분석·운세 해석은 명리학 데이터를 기반으로 AI가 생성한 결과예요.
+        </div>
+
         {error && <p className="error-text">{error}</p>}
 
         <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: 8 }}>

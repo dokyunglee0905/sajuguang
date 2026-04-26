@@ -487,6 +487,22 @@ body {
   font-size: 13px;
 }
 
+/* ─── AI notice ─── */
+.ai-notice {
+  background: rgba(167, 139, 250, 0.06);
+  border: 1px solid rgba(167, 139, 250, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 10px 13px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.65;
+}
+
+.ai-notice strong {
+  color: #a78bfa;
+  font-weight: 700;
+}
+
 /* ─── Bottom tab safe area ─── */
 .has-tabbar {
   padding-bottom: calc(64px + env(safe-area-inset-bottom));

@@ -229,6 +229,9 @@ export default function YearlyPage() {
               {ANNUAL_CATEGORIES.map(({ key, label, icon }) => (
                 <FortuneCard key={key} title={label} icon={icon} text={annualFortune[key] as string} />
               ))}
+              <div className="ai-notice">
+                <strong>✦ AI 생성 결과</strong> · 사주 원국은 전통 명리학 알고리즘으로 계산한 값이며, 위 운세 내용은 AI가 생성한 결과예요.
+              </div>
             </>
           )}
         </div>
@@ -312,6 +315,9 @@ export default function YearlyPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+              <div className="ai-notice">
+                <strong>✦ AI 생성 결과</strong> · 사주 원국은 전통 명리학 알고리즘으로 계산한 값이며, 위 운세 내용은 AI가 생성한 결과예요.
               </div>
             </>
           )}

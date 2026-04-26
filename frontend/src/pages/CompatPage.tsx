@@ -344,6 +344,11 @@ export default function CompatPage() {
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.72)', lineHeight: 1.75, margin: 0 }}>{compat.조심할것}</p>
           </div>
 
+          {/* AI 안내 */}
+          <div className="ai-notice">
+            <strong>✦ AI 생성 결과</strong> · 오행 궁합 점수는 전통 명리학 알고리즘으로 계산한 값이며, 위 해석 내용은 AI가 생성한 결과예요.
+          </div>
+
           {/* 상대방 저장 */}
           <button
             onClick={handleSaveContact}
