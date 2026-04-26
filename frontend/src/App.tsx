@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import OnboardingPage from './pages/OnboardingPage';
 import HomePage from './pages/HomePage';
@@ -33,6 +34,13 @@ function Layout() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const ping = () => fetch(`${import.meta.env.VITE_API_URL}/health`, { method: 'GET' }).catch(() => {});
+    ping();
+    const id = setInterval(ping, 14 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <BrowserRouter>
       <PassProvider>

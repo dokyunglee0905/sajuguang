@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { calculateSaju, BirthInfo } from '../saju/calculator';
+import { calculateSaju } from '../saju/calculator';
 import { CHEONGAN } from '../data/cheongan';
 import { calcYongshin, calcTougan, calcHapChung, calcSeun, getJijangganInfo } from '../saju/analysisData';
 import { supabase } from '../db/supabase';
 import { generateJSON } from '../lib/gemini';
+import { buildBirthKey, parseBirthInfo } from '../lib/birthUtils';
 
 const router = Router();
 
@@ -83,19 +84,15 @@ ${JSON.stringify(analysisData, null, 2)}
 }
 
 router.post('/full', async (req: Request, res: Response) => {
-  const { year, month, day, hour, minute, gender, unknownHour } = req.body;
+  const { year, month, day, gender } = req.body;
 
   if (!year || !month || !day || !gender) {
     res.status(400).json({ error: '생년월일과 성별은 필수입니다.' });
     return;
   }
 
-  const birthInfo: BirthInfo = {
-    year: Number(year), month: Number(month), day: Number(day),
-    hour: unknownHour ? 0 : Number(hour ?? 0),
-    minute: unknownHour ? 0 : Number(minute ?? 0),
-    gender, unknownHour: !!unknownHour,
-  };
+  const birthInfo = parseBirthInfo(req.body);
+  const birthKey = buildBirthKey(birthInfo);
 
   try {
     const saju = calculateSaju(birthInfo);
@@ -110,13 +107,18 @@ router.post('/full', async (req: Request, res: Response) => {
 
     const ilju = `${saju.dayPillar.cheongan}${saju.dayPillar.jiji}`;
 
-    // ── DB에서 일주 기반 4개 섹션 조회 ──────────────────────
+    // ── DB에서 일주 기반 섹션 조회 + 현재시기 캐시 병렬 조회 ──
     const DB_SECTIONS = ['나는어떤사람인가', '일과적성', '돈과재물', '사람들과어울리는방식', '건강과에너지', '나의연애코드', '소통과갈등방식', '나의성장키워드'];
-    const { data: dbRows } = supabase ? await supabase
-      .from('ilju_analysis')
-      .select('section, content')
-      .eq('ilju', ilju)
-      .in('section', DB_SECTIONS) : { data: null };
+    const periodKey = String(currentYear);
+
+    const [{ data: dbRows }, { data: cachedPeriod }] = await Promise.all([
+      supabase
+        ? supabase.from('ilju_analysis').select('section, content').eq('ilju', ilju).in('section', DB_SECTIONS)
+        : Promise.resolve({ data: null }),
+      supabase
+        ? supabase.from('fortune_cache').select('fortune').eq('birth_key', birthKey).eq('cache_type', 'current_period').eq('period_key', periodKey).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
 
     const dbMap: Record<string, any> = {};
     for (const row of (dbRows ?? [])) {
@@ -129,15 +131,23 @@ router.post('/full', async (req: Request, res: Response) => {
     let source: 'db' | 'ai' = 'db';
 
     if (hasDbContent) {
-      // DB 콘텐츠 + Gemini(현재시기만)
-      let currentPeriod: any;
-      try {
-        currentPeriod = await generateCurrentPeriod(saju, ilganEl, gender, age, currentDaewoon, seun, hapchung);
-      } catch {
-        currentPeriod = {
-          현재대운해석: '현재 시기 분석을 불러오지 못했어요.',
-          올해흐름: '', 지금해야할것: '', 지금하지말아야할것: '',
-        };
+      // 현재시기 캐시 확인 → 없으면 Gemini 생성 후 저장
+      let currentPeriod: any = cachedPeriod?.fortune ?? null;
+      if (!currentPeriod) {
+        try {
+          currentPeriod = await generateCurrentPeriod(saju, ilganEl, gender, age, currentDaewoon, seun, hapchung);
+          if (supabase) {
+            await supabase.from('fortune_cache').upsert(
+              { birth_key: birthKey, cache_type: 'current_period', period_key: periodKey, fortune: currentPeriod },
+              { onConflict: 'birth_key,cache_type,period_key' },
+            );
+          }
+        } catch {
+          currentPeriod = {
+            현재대운해석: '현재 시기 분석을 불러오지 못했어요.',
+            올해흐름: '', 지금해야할것: '', 지금하지말아야할것: '',
+          };
+        }
       }
 
       analysis = {
