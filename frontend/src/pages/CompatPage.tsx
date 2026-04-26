@@ -137,7 +137,7 @@ function PersonInput({ label, form, onChange, collapsible = false }: PersonInput
           <input type="checkbox" checked={form.unknownHour}
             onChange={e => onChange({ ...form, unknownHour: e.target.checked })}
             style={{ width: 16, height: 16, accentColor: '#a78bfa' }} />
-          <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)' }}>시간을 모릅니다</span>
+          <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)' }}>시간을 몰라요</span>
         </label>
         {!form.unknownHour && (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -208,7 +208,7 @@ export default function CompatPage() {
       setResult(res);
       setStep('result');
     } catch {
-      setError('궁합 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      setError('궁합 분석 중 오류가 생겼어요. 잠시 후 다시 시도해 주세요.');
       setStep('input');
     }
   };

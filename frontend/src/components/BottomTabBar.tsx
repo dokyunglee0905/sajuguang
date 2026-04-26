@@ -35,25 +35,39 @@ export default function BottomTabBar() {
 
   return (
     <nav style={{
-      position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-      width: '100%', maxWidth: 480,
-      background: 'rgba(15,12,41,0.95)',
-      backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
-      borderTop: '1px solid rgba(255,255,255,0.08)',
+      position: 'fixed',
+      bottom: `calc(16px + env(safe-area-inset-bottom))`,
+      left: '50%',
+      transform: 'translateX(-50%)',
       zIndex: 100,
-      paddingBottom: 'env(safe-area-inset-bottom)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 6,
     }}>
       {/* 자유이용권 타이머 */}
       {isActive && remaining > 0 && (
         <div style={{
-          textAlign: 'center', padding: '6px 0 4px',
           fontSize: 11, color: '#a78bfa', fontWeight: 600, letterSpacing: 0.2,
-          borderBottom: '1px solid rgba(167,139,250,0.15)',
+          background: 'rgba(15,12,41,0.85)',
+          backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(167,139,250,0.25)',
+          borderRadius: 20, padding: '4px 14px',
         }}>
           ✦ 자유이용권 {formatRemaining(remaining)}
         </div>
       )}
-      <div style={{ display: 'flex' }}>
+      {/* 플로팅 탭바 */}
+      <div style={{
+        display: 'flex',
+        background: 'rgba(20,16,50,0.92)',
+        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.12)',
+        borderRadius: 40,
+        padding: '6px 8px',
+        gap: 2,
+        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+      }}>
         {TABS.map(tab => {
           const active = pathname === tab.path || (tab.path === '/home' && pathname === '/');
           return (
@@ -61,18 +75,22 @@ export default function BottomTabBar() {
               key={tab.path}
               onClick={() => navigate(tab.path)}
               style={{
-                flex: 1, padding: '10px 0 12px',
-                background: 'none', border: 'none', cursor: 'pointer',
+                padding: active ? '8px 18px' : '8px 14px',
+                background: active ? 'rgba(167,139,250,0.2)' : 'none',
+                border: 'none', cursor: 'pointer',
+                borderRadius: 32,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                transition: 'all 0.15s',
               }}
             >
-              <span style={{ fontSize: 18, color: active ? '#a78bfa' : 'rgba(255,255,255,0.35)' }}>
+              <span style={{ fontSize: 18, color: active ? '#a78bfa' : 'rgba(255,255,255,0.4)' }}>
                 {tab.icon}
               </span>
               <span style={{
                 fontSize: 10, fontWeight: active ? 700 : 400,
-                color: active ? '#a78bfa' : 'rgba(255,255,255,0.35)',
+                color: active ? '#a78bfa' : 'rgba(255,255,255,0.4)',
                 letterSpacing: -0.2,
+                whiteSpace: 'nowrap',
               }}>
                 {tab.label}
               </span>

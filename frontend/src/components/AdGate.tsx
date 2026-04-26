@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePass } from '../store/PassContext';
 
 export default function AdGate({ children }: { children: ReactNode }) {
   const { isActive, activate } = usePass();
+  const navigate = useNavigate();
 
   if (isActive) return <>{children}</>;
 
@@ -20,14 +22,21 @@ export default function AdGate({ children }: { children: ReactNode }) {
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, margin: '0 0 36px' }}>
           짧은 광고를 보고<br />
           모든 기능을 2시간 동안<br />
-          자유롭게 이용하세요
+          자유롭게 이용해요
         </p>
         <button className="btn-primary" onClick={activate}>
           광고 보고 무료 이용하기
         </button>
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', marginTop: 20, lineHeight: 1.6 }}>
-          * 광고 SDK는 런칭 후 연동됩니다
-        </p>
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            marginTop: 16, background: 'none', border: 'none',
+            color: 'rgba(255,255,255,0.35)', fontSize: 14,
+            cursor: 'pointer', padding: '8px 0', width: '100%',
+          }}
+        >
+          나중에 하기
+        </button>
       </div>
     </div>
   );

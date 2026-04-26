@@ -64,7 +64,7 @@ export default function OnboardingPage() {
       setSajuResult(result);
       navigate('/home');
     } catch {
-      setError('사주 계산 중 오류가 발생했습니다. 다시 시도해주세요.');
+      setError('사주 계산 중 오류가 생겼어요. 다시 시도해 주세요.');
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ export default function OnboardingPage() {
         <div style={{ fontSize: 42, fontWeight: 800, color: '#fff', letterSpacing: -1 }}>사주광</div>
         <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.45)', letterSpacing: 4, marginTop: 4 }}>四柱狂</div>
         <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, marginTop: 16 }}>
-          생년월일시를 입력하면<br />나의 사주를 분석해드립니다
+          생년월일시를 입력하면<br />나의 사주를 분석해드려요
         </p>
       </div>
 
@@ -141,7 +141,7 @@ export default function OnboardingPage() {
               onChange={e => setForm(f => ({ ...f, unknownHour: e.target.checked }))}
               style={{ width: 16, height: 16, accentColor: '#a78bfa' }}
             />
-            <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)' }}>시간을 모릅니다</span>
+            <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)' }}>시간을 몰라요</span>
           </label>
           {!form.unknownHour && (
             <>
@@ -167,7 +167,7 @@ export default function OnboardingPage() {
                 />
               </div>
               <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '6px 0 0', lineHeight: 1.6 }}>
-                ✦ 사주광은 태양시 기준으로 계산해요. 입력하신 시간에서 32분이 자동 보정됩니다.
+                ✦ 사주광은 태양시 기준으로 계산해요. 입력한 시간에서 32분이 자동 보정돼요.
               </p>
             </>
           )}

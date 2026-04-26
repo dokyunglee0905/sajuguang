@@ -68,6 +68,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 16px var(--space-md);
+  padding-top: calc(16px + env(safe-area-inset-top));
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
@@ -505,7 +506,56 @@ body {
 
 /* ─── Bottom tab safe area ─── */
 .has-tabbar {
-  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  padding-bottom: calc(120px + env(safe-area-inset-bottom));
+}
+
+/* ─── Light mode ─── */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f5f3ff;
+    --bg-card: rgba(0, 0, 0, 0.04);
+    --bg-card-hover: rgba(0, 0, 0, 0.07);
+    --border: rgba(0, 0, 0, 0.08);
+    --border-light: rgba(0, 0, 0, 0.12);
+    --text: #1a1040;
+    --text-secondary: rgba(26, 16, 64, 0.65);
+    --text-muted: rgba(26, 16, 64, 0.4);
+    --accent: #7c3aed;
+    --accent-bg: rgba(124, 58, 237, 0.1);
+    --accent-border: rgba(124, 58, 237, 0.3);
+  }
+
+  body {
+    background: var(--bg);
+  }
+
+  .page {
+    background: linear-gradient(160deg, #f5f3ff, #ede9fe, #e9e6ff);
+  }
+
+  .top-bar {
+    background: rgba(245, 243, 255, 0.88);
+  }
+
+  .tab-bar {
+    background: rgba(245, 243, 255, 0.88);
+  }
+
+  .input {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: var(--text);
+  }
+
+  .gender-btn {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: var(--text-secondary);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  }
 }
 
 /* ─── Responsive ─── */
