@@ -67,6 +67,12 @@ function buildIljuCompatDesc(
   return `${mainDesc} ${jijiDesc}`.trim();
 }
 
+function personalizeText(text: string, el1: string, el2: string, name1: string, name2: string): string {
+  return text
+    .replace(new RegExp(`메인 오행이 ${el1}인 분`, 'g'), `${name1}님`)
+    .replace(new RegExp(`메인 오행이 ${el2}인 분`, 'g'), `${name2}님`);
+}
+
 function buildSipseongCompatDesc(topSS1: string[], topSS2: string[], name1: string, name2: string): string {
   const g1 = SIPSEONG_DESC[topSS1[0]]?.group ?? topSS1[0];
   const g2 = SIPSEONG_DESC[topSS2[0]]?.group ?? topSS2[0];
@@ -197,6 +203,8 @@ router.post('/one-to-one', async (req: Request, res: Response) => {
     let compat: any;
     let source: 'db' | 'ai' = 'db';
 
+    const p = (text: string) => personalizeText(text, el1, el2, name1, name2);
+
     if (dbRow) {
       compat = {
         score: dbRow.score,
@@ -204,13 +212,12 @@ router.post('/one-to-one', async (req: Request, res: Response) => {
         오행궁합: dbRow.ohaeng_desc,
         일주궁합,
         성향궁합,
-        함께하면좋은것: (dbRow.strengths as string[]).join('\n'),
-        조심할것: (dbRow.cautions as string[]).join('\n'),
-        팁: dbRow.tip,
+        함께하면좋은것: (dbRow.strengths as string[]).map(p).join('\n'),
+        조심할것: (dbRow.cautions as string[]).map(p).join('\n'),
+        팁: p(dbRow.tip),
         keywords: dbRow.keywords,
       };
     } else {
-      // DB 미등록 시 Gemini 폴백
       source = 'ai';
       const geminiResult = await geminiCompatFallback(p1Data, p2Data, ohaengRel, relationship);
       compat = {
@@ -219,9 +226,9 @@ router.post('/one-to-one', async (req: Request, res: Response) => {
         오행궁합: geminiResult.ohaeng_desc,
         일주궁합,
         성향궁합,
-        함께하면좋은것: (geminiResult.strengths as string[]).join('\n'),
-        조심할것: (geminiResult.cautions as string[]).join('\n'),
-        팁: geminiResult.tip,
+        함께하면좋은것: (geminiResult.strengths as string[]).map(p).join('\n'),
+        조심할것: (geminiResult.cautions as string[]).map(p).join('\n'),
+        팁: p(geminiResult.tip),
         keywords: geminiResult.keywords,
       };
     }
