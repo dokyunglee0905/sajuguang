@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { calculateSaju, BirthInfo } from '../saju/calculator';
 import { CHEONGAN } from '../data/cheongan';
 import { calcYongshin, calcTougan, calcHapChung, calcSeun, getJijangganInfo } from '../saju/analysisData';
 import { supabase } from '../db/supabase';
+import { generateJSON } from '../lib/gemini';
 
 const router = Router();
 
@@ -48,13 +48,7 @@ ${JSON.stringify(hapchung)}
   "지금하지말아야할것": "이 시기에 피해야 할 것 2줄"
 }`;
 
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-  const result = await model.generateContent(prompt);
-  const text = result.response.text().trim();
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('Gemini 파싱 실패');
-  return JSON.parse(match[0]);
+  return generateJSON(prompt);
 }
 
 // DB에 없을 때 Gemini로 전체 분석 폴백
@@ -85,13 +79,7 @@ ${JSON.stringify(analysisData, null, 2)}
   "나의성장키워드": { "인생의테마": "", "가장빛나는때": "", "성장을위한조언": "", "나의인생문장": "" }
 }`;
 
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-  const result = await model.generateContent(prompt);
-  const text = result.response.text().trim();
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('Gemini 파싱 실패');
-  return JSON.parse(match[0]);
+  return generateJSON(prompt);
 }
 
 router.post('/full', async (req: Request, res: Response) => {

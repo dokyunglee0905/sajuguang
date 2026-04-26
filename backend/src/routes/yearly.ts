@@ -1,10 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { calculateSaju as manseryeokCalc } from '@fullstackfamily/manseryeok';
-import { calculateSaju, BirthInfo } from '../saju/calculator';
+import { calculateSaju } from '../saju/calculator';
 import { CHEONGAN } from '../data/cheongan';
 import { calcSeun } from '../saju/analysisData';
 import { supabase } from '../db/supabase';
+import { generateJSON } from '../lib/gemini';
+import { buildBirthKey, parseBirthInfo } from '../lib/birthUtils';
 
 const router = Router();
 
@@ -14,10 +15,6 @@ function getMonthPillar(year: number, month: number): { cheongan: string; jiji: 
   const cg = mp[0];
   const el = CHEONGAN.find(c => c.name === cg)?.element ?? '';
   return { cheongan: cg, jiji: mp[1], element: el };
-}
-
-function buildBirthKey(info: BirthInfo): string {
-  return `${info.year}-${info.month}-${info.day}-${info.hour}-${info.minute}-${info.gender}`;
 }
 
 function buildAnnualPrompt(data: Record<string, any>, gender: string, targetYear: number): string {
@@ -80,24 +77,18 @@ ${JSON.stringify(data, null, 2)}
 }
 
 router.post('/annual', async (req: Request, res: Response) => {
-  const { year, month, day, hour, minute, gender, unknownHour, targetYear } = req.body;
+  const { year, month, day, gender, targetYear } = req.body;
   if (!year || !month || !day || !gender) {
     res.status(400).json({ error: '생년월일과 성별은 필수입니다.' });
     return;
   }
 
-  const birthInfo: BirthInfo = {
-    year: Number(year), month: Number(month), day: Number(day),
-    hour: unknownHour ? 0 : Number(hour ?? 0),
-    minute: unknownHour ? 0 : Number(minute ?? 0),
-    gender, unknownHour: !!unknownHour,
-  };
+  const birthInfo = parseBirthInfo(req.body);
   const ty = Number(targetYear) || new Date().getFullYear();
   const birthKey = buildBirthKey(birthInfo);
   const periodKey = String(ty);
 
   try {
-    // ── 캐시 조회 ──────────────────────────────────────────
     if (supabase) {
       const { data: cached } = await supabase
         .from('fortune_cache')
@@ -113,7 +104,6 @@ router.post('/annual', async (req: Request, res: Response) => {
       }
     }
 
-    // ── Gemini 생성 ────────────────────────────────────────
     const saju = calculateSaju(birthInfo);
     const ilganEl = CHEONGAN.find(c => c.name === saju.ilgan)?.element ?? '';
     const seun = calcSeun(ty);
@@ -137,18 +127,8 @@ router.post('/annual', async (req: Request, res: Response) => {
       나이: `${ageInYear}세`,
     };
 
-    const prompt = buildAnnualPrompt(analysisData, gender, ty);
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    const fortune = await generateJSON(buildAnnualPrompt(analysisData, gender, ty));
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) { res.status(500).json({ error: '운세 생성 실패' }); return; }
-
-    const fortune = JSON.parse(jsonMatch[0]);
-
-    // ── DB 저장 ────────────────────────────────────────────
     if (supabase) {
       await supabase.from('fortune_cache').upsert(
         { birth_key: birthKey, cache_type: 'annual', period_key: periodKey, fortune },
@@ -164,18 +144,13 @@ router.post('/annual', async (req: Request, res: Response) => {
 });
 
 router.post('/monthly', async (req: Request, res: Response) => {
-  const { year, month, day, hour, minute, gender, unknownHour, targetYear, targetMonth } = req.body;
+  const { year, month, day, gender, targetYear, targetMonth } = req.body;
   if (!year || !month || !day || !gender) {
     res.status(400).json({ error: '생년월일과 성별은 필수입니다.' });
     return;
   }
 
-  const birthInfo: BirthInfo = {
-    year: Number(year), month: Number(month), day: Number(day),
-    hour: unknownHour ? 0 : Number(hour ?? 0),
-    minute: unknownHour ? 0 : Number(minute ?? 0),
-    gender, unknownHour: !!unknownHour,
-  };
+  const birthInfo = parseBirthInfo(req.body);
   const now = new Date();
   const ty = Number(targetYear) || now.getFullYear();
   const tm = Number(targetMonth) || (now.getMonth() + 1);
@@ -183,7 +158,6 @@ router.post('/monthly', async (req: Request, res: Response) => {
   const periodKey = `${ty}-${String(tm).padStart(2, '0')}`;
 
   try {
-    // ── 캐시 조회 ──────────────────────────────────────────
     if (supabase) {
       const { data: cached } = await supabase
         .from('fortune_cache')
@@ -199,7 +173,6 @@ router.post('/monthly', async (req: Request, res: Response) => {
       }
     }
 
-    // ── Gemini 생성 ────────────────────────────────────────
     const saju = calculateSaju(birthInfo);
     const ilganEl = CHEONGAN.find(c => c.name === saju.ilgan)?.element ?? '';
     const seun = calcSeun(ty);
@@ -225,18 +198,8 @@ router.post('/monthly', async (req: Request, res: Response) => {
       나이: `${ageInYear}세`,
     };
 
-    const prompt = buildMonthlyPrompt(analysisData, gender, ty, tm);
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    const fortune = await generateJSON(buildMonthlyPrompt(analysisData, gender, ty, tm));
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) { res.status(500).json({ error: '운세 생성 실패' }); return; }
-
-    const fortune = JSON.parse(jsonMatch[0]);
-
-    // ── DB 저장 ────────────────────────────────────────────
     if (supabase) {
       await supabase.from('fortune_cache').upsert(
         { birth_key: birthKey, cache_type: 'monthly', period_key: periodKey, fortune },
